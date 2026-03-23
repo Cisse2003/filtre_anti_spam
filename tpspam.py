@@ -19,9 +19,14 @@ def lireMail(fichier, dictionnaire):
 def charge_dico(fichier):
 	f = open(fichier, "r")
 	mots = f.read().split("\n")
-	print("Chargé " + str(len(mots)) + " mots dans le dictionnaire")
 	f.close()
-	return mots[:-1]
+
+	# Exclure les mots de moins de 3 lettres
+	mots = [m for m in mots if len(m) >= 3]
+
+	print("Chargé " + str(len(mots)) + " mots dans le dictionnaire")
+
+	return mots
 
 def apprendBinomial(dossier, fichiers, dictionnaire):
 	"""
