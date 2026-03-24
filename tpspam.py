@@ -68,8 +68,8 @@ def test(dossier, isSpam, Pspam, Pham, bspam, bham):
 
 ############ programme principal ############
 
-dossier_spams = "spam"	# à vérifier
-dossier_hams = "ham"
+dossier_spams = "spam/baseapp/spam"	# à vérifier
+dossier_hams = "spam/baseapp/ham"
 
 fichiersspams = os.listdir(dossier_spams)
 fichiershams = os.listdir(dossier_hams)
@@ -78,7 +78,7 @@ mSpam = len(fichiersspams)
 mHam = len(fichiershams)
 
 # Chargement du dictionnaire:
-dictionnaire = charge_dico("dictionnaire1000en.txt")
+dictionnaire = charge_dico("spam/dictionnaire1000en.txt")
 print(dictionnaire)
 
 # Apprentissage des bspam et bham:
