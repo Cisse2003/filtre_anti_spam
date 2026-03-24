@@ -11,7 +11,10 @@ def lireMail(fichier, dictionnaire):
 	
 	x = [False] * len(dictionnaire) 
 
-	# à modifier...
+
+	for i in range(len(dictionnaire)):
+		if dictionnaire[i] in mots:
+			x[i] = True
 	
 	f.close()
 	return x
@@ -34,7 +37,17 @@ def apprendBinomial(dossier, fichiers, dictionnaire):
 	Retourne un vecteur b de paramètres 
 		
 	"""
-	b = 0	# à modifier...
+	eps = 1
+	n=len(fichiers) #nb de mails
+	#nb de mail contenant le mot i du dictionnaire
+	nbMail = np.zeros(len(dictionnaire))
+
+	for fichier in fichiers:
+		chemin = os.path.join(dossier, fichier)
+		x = lireMail(chemin, dictionnaire)
+		nbMail += x #
+	# Proba
+	b = (nbMail + eps )/(n + 2 * eps)
 	return b
 
 
