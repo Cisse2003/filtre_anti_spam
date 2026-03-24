@@ -7,13 +7,13 @@ def lireMail(fichier, dictionnaire):
 	Lire un fichier et retourner un vecteur de booléens en fonctions du dictionnaire
 	"""
 	f = open(fichier, "r",encoding="ascii", errors="surrogateescape")
-	mots = f.read().split(" ")
+	mots = f.read().lower().split(" ")
 	
 	x = [False] * len(dictionnaire) 
 
 
 	for i in range(len(dictionnaire)):
-		if dictionnaire[i] in mots:
+		if dictionnaire[i].lower() in mots:
 			x[i] = True
 	
 	f.close()
