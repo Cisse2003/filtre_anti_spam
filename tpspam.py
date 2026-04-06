@@ -58,8 +58,27 @@ def prediction(x, Pspam, Pham, bspam, bham):
 		Retourne True ou False.
 		
 	"""
+	#pn essaie de calculer P(spam∣x) et P(ham∣x)
+	# Mais on a besoin de P(x), P(x|Spam) et P(x|Ham)
+	PXSpam = 1
+	PXHam = 1
+	for i in range(len(x)):
+		if x[i] :
+			PXSpam *= bspam[i]
+			PXHam *= bham[i]
+		else:
+			PXSpam *= (1-bspam[i])
+			PXHam *= (1-bham[i])
+
+	#Px = P(x∣spam)*P(spam) + P(x∣ham)⋅P(ham)
+	Px = PXSpam * Pspam + PXHam * Pham
+	# on calcule P(spam∣x)
+	PSpamX = (PXSpam * Pspam) / Px
+
+	# on calcule P(ham∣x)
+	PHamX = (PXHam * Pham) / Px
 	
-	return False  # à modifier...
+	return PSpamX > PHamX
 	
 def test(dossier, isSpam, Pspam, Pham, bspam, bham):
 	"""
@@ -101,8 +120,8 @@ print("apprentissage de bham...")
 bham = apprendBinomial(dossier_hams, fichiershams, dictionnaire)
 
 # Calcul des probabilités a priori Pspam et Pham:
-# Pspam = 
-# Pham = 
+Pspam = mSpam /(mSpam + mHam)
+Pham = mHam /(mSpam + mHam)
 
 
 # Calcul des erreurs avec la fonction test():
