@@ -89,13 +89,22 @@ def test(dossier, isSpam, Pspam, Pham, bspam, bham):
 		Retourne le taux d'erreur 
 	"""
 	fichiers = os.listdir(dossier)
+	nbErreurs = 0
 	for fichier in fichiers:
-		print("Mail " + dossier+"/"+fichier)		
+		#print("Mail " + dossier+"/"+fichier)
+		pred = prediction(lireMail(dossier+"/"+fichier, dictionnaire), Pspam, Pham, bspam, bham)
+		texte = "SPAM" if isSpam else "HAM"
+		texte += " "+ dossier+"/"+fichier + " identifié comme un "
+		texte += "SPAM" if pred else "HAM"
+		if (isSpam and not pred) or (not isSpam and pred) :
+			texte += " *** erreur ***"
+			nbErreurs += 1
+		print(texte)
 
-		
-		# à compléter...
 
-	return 0  # à modifier...
+	PourcetageErreur = nbErreurs / len(fichiers)
+
+	return PourcetageErreur,len(fichiers)
 
 
 ############ programme principal ############
@@ -125,5 +134,15 @@ Pham = mHam /(mSpam + mHam)
 
 
 # Calcul des erreurs avec la fonction test():
+dossier_spams_test = "spam/basetest/spam"	# à vérifier
+dossier_hams_test = "spam/basetest/ham"
+ErreurSpam, nbMailsSpam = test(dossier_spams_test, True, Pspam, Pham, bspam, bham)
+ErreurHam, nbMailsHam = test(dossier_hams_test, False, Pspam, Pham, bspam, bham)
+erreur = (ErreurSpam + ErreurHam) / 2
+nbMails = nbMailsSpam + nbMailsHam
 
+
+print("Erreur de test sur "+str(nbMailsSpam)+ "SPAM       : "+ str(ErreurSpam)+" %")
+print("Erreur de test sur "+str(nbMailsHam)+ "HAM        : "+ str(ErreurHam)+" %")
+print("Erreur de test globale sur "+str(nbMails)+ "mails : "+ str(erreur)+" %")
 
