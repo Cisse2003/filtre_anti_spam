@@ -78,7 +78,7 @@ def prediction(x, Pspam, Pham, bspam, bham):
 	# on calcule P(ham∣x)
 	PHamX = (PXHam * Pham) / Px
 	
-	return PSpamX > PHamX
+	return PSpamX > PHamX,PSpamX,PHamX
 	
 def test(dossier, isSpam, Pspam, Pham, bspam, bham):
 	"""
@@ -92,9 +92,11 @@ def test(dossier, isSpam, Pspam, Pham, bspam, bham):
 	nbErreurs = 0
 	for fichier in fichiers:
 		#print("Mail " + dossier+"/"+fichier)
-		pred = prediction(lireMail(dossier+"/"+fichier, dictionnaire), Pspam, Pham, bspam, bham)
+		pred, Pspam_x, Pham_x = prediction(lireMail(dossier+"/"+fichier, dictionnaire), Pspam, Pham, bspam, bham)
 		texte = "SPAM" if isSpam else "HAM"
-		texte += " "+ dossier+"/"+fichier + " identifié comme un "
+		texte += " numéro " + fichier.split(".")[0]
+		texte += " : P(Y=SPAM | X=x) = "+str(Pspam_x)+", P(Y=HAM | X=x) = "+str(Pham_x)
+		texte += "\n					=>"+ " identifié comme un "
 		texte += "SPAM" if pred else "HAM"
 		if (isSpam and not pred) or (not isSpam and pred) :
 			texte += " *** erreur ***"
@@ -142,7 +144,7 @@ erreur = (ErreurSpam + ErreurHam) / 2
 nbMails = nbMailsSpam + nbMailsHam
 
 
-print("Erreur de test sur "+str(nbMailsSpam)+ "SPAM       : "+ str(ErreurSpam)+" %")
-print("Erreur de test sur "+str(nbMailsHam)+ "HAM        : "+ str(ErreurHam)+" %")
-print("Erreur de test globale sur "+str(nbMails)+ "mails : "+ str(erreur)+" %")
+print("Erreur de test sur "+str(nbMailsSpam)+ " SPAM       : "+ str(ErreurSpam)+" %")
+print("Erreur de test sur "+str(nbMailsHam)+ " HAM        : "+ str(ErreurHam)+" %")
+print("Erreur de test globale sur "+str(nbMails)+ " mails : "+ str(erreur)+" %")
 
