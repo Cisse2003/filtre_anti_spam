@@ -58,6 +58,8 @@ def prediction(x, Pspam, Pham, bspam, bham):
 		Retourne True ou False.
 		
 	"""
+	"""
+	version sans log
 	#pn essaie de calculer P(spam∣x) et P(ham∣x)
 	# Mais on a besoin de P(x), P(x|Spam) et P(x|Ham)
 	PXSpam = 1
@@ -77,7 +79,32 @@ def prediction(x, Pspam, Pham, bspam, bham):
 
 	# on calcule P(ham∣x)
 	PHamX = (PXHam * Pham) / Px
-	
+	return PSpamX > PHamX,PSpamX,PHamX
+    """
+	logPXSpam = math.log(Pspam)  # on inclut le prior
+	logPXHam = math.log(Pham)
+
+	for i in range(len(x)):
+		if x[i] :
+			#PXSpam *= math.log(bspam[i])
+			#PXHam *= math.log(bham[i])
+			logPXSpam += math.log(bspam[i])
+			logPXHam += math.log(bham[i])
+		else:
+			#PXSpam *= (1 - math.log(bspam[i]))
+			#PXHam *= (1 - math.log(bham[i]))
+			logPXSpam += math.log((1 - bspam[i]))
+			logPXHam += math.log((1 - bham[i]))
+
+	maxLog = max(logPXSpam, logPXHam)
+
+	logPSpamX = math.exp(logPXSpam - maxLog)
+	logPHamX = math.exp(logPXHam - maxLog)
+
+	# Normalisation
+	total = logPSpamX + logPHamX
+	PSpamX = logPSpamX / total
+	PHamX = logPHamX / total
 	return PSpamX > PHamX,PSpamX,PHamX
 	
 def test(dossier, isSpam, Pspam, Pham, bspam, bham):
@@ -104,7 +131,7 @@ def test(dossier, isSpam, Pspam, Pham, bspam, bham):
 		print(texte)
 
 
-	PourcetageErreur = nbErreurs / len(fichiers)
+	PourcetageErreur = nbErreurs / len(fichiers) * 100
 
 	return PourcetageErreur,len(fichiers)
 
