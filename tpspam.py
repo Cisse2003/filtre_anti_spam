@@ -1,22 +1,29 @@
 import numpy as np
 import os
 import math
+import re
+import pickle
 
 def lireMail(fichier, dictionnaire):
-	""" 
+	"""
 	Lire un fichier et retourner un vecteur de booléens en fonctions du dictionnaire
 	"""
 	f = open(fichier, "r",encoding="ascii", errors="surrogateescape")
-	mots = f.read().lower().split(" ")
-	
-	x = [False] * len(dictionnaire) 
+	#mots = f.read().lower().split(" ")
+	mots = re.findall(r"\b[a-zA-Z]+\b", f.read().lower())     # Amélioration
+
+	f.close()
+
+	mots_set = set(mots)  # Amélioration :optimisation du code
+
+	x = [False] * len(dictionnaire)
 
 
 	for i in range(len(dictionnaire)):
-		if dictionnaire[i].lower() in mots:
+		if dictionnaire[i].lower() in mots_set:
 			x[i] = True
-	
-	f.close()
+
+	#f.close()
 	return x
 
 def charge_dico(fichier):
@@ -34,8 +41,8 @@ def charge_dico(fichier):
 def apprendBinomial(dossier, fichiers, dictionnaire):
 	"""
 	Fonction d'apprentissage d'une loi binomiale a partir des fichiers d'un dossier
-	Retourne un vecteur b de paramètres 
-		
+	Retourne un vecteur b de paramètres
+
 	"""
 	eps = 1
 	n=len(fichiers) #nb de mails
@@ -56,7 +63,7 @@ def prediction(x, Pspam, Pham, bspam, bham):
 		Prédit si un mail représenté par un vecteur booléen x est un spam
 		à partir du modèle de paramètres Pspam, Pham, bspam, bham.
 		Retourne True ou False.
-		
+
 	"""
 	"""
 	version sans log
@@ -81,39 +88,43 @@ def prediction(x, Pspam, Pham, bspam, bham):
 	PHamX = (PXHam * Pham) / Px
 	return PSpamX > PHamX,PSpamX,PHamX
     """
-	logPXSpam = math.log(Pspam)  # on inclut le prior
+	logPXSpam = math.log(Pspam)  # on inclut les proba a priori
 	logPXHam = math.log(Pham)
+
+	# Pré calcul des logs
+	log_bspam = np.log(bspam)
+	log_1_bpsam = np.log(1 - bspam)
+
+	log_bham = np.log(bham)
+	log_1_bham = np.log(1 - bham)
+
 
 	for i in range(len(x)):
 		if x[i] :
-			#PXSpam *= math.log(bspam[i])
-			#PXHam *= math.log(bham[i])
-			logPXSpam += math.log(bspam[i])
-			logPXHam += math.log(bham[i])
+			logPXSpam += log_bspam[i]
+			logPXHam += log_bham[i]
 		else:
-			#PXSpam *= (1 - math.log(bspam[i]))
-			#PXHam *= (1 - math.log(bham[i]))
-			logPXSpam += math.log((1 - bspam[i]))
-			logPXHam += math.log((1 - bham[i]))
+			logPXSpam += log_1_bpsam[i]
+			logPXHam += log_1_bham[i]
 
 	maxLog = max(logPXSpam, logPXHam)
 
-	logPSpamX = math.exp(logPXSpam - maxLog)
-	logPHamX = math.exp(logPXHam - maxLog)
+	PSpamX = math.exp(logPXSpam - maxLog)   # Afin d'éviter les nombres trop grands (- maxLog)
+	PHamX = math.exp(logPXHam - maxLog)
 
 	# Normalisation
-	total = logPSpamX + logPHamX
-	PSpamX = logPSpamX / total
-	PHamX = logPHamX / total
-	return PSpamX > PHamX,PSpamX,PHamX
-	
-def test(dossier, isSpam, Pspam, Pham, bspam, bham):
+	total = PSpamX + PHamX
+
+	return PSpamX > PHamX, PSpamX / total, PHamX / total
+
+
+def test(dossier, isSpam, Pspam, Pham, bspam, bham, dictionnaire):
 	"""
-		Test le classifieur de paramètres Pspam, Pham, bspam, bham 
-		sur tous les fichiers d'un dossier étiquetés 
+		Test le classifieur de paramètres Pspam, Pham, bspam, bham
+		sur tous les fichiers d'un dossier étiquetés
 		comme SPAM si isSpam et HAM sinon
-		
-		Retourne le taux d'erreur 
+
+		Retourne le taux d'erreur
 	"""
 	fichiers = os.listdir(dossier)
 	nbErreurs = 0
@@ -134,6 +145,38 @@ def test(dossier, isSpam, Pspam, Pham, bspam, bham):
 	PourcetageErreur = nbErreurs / len(fichiers) * 100
 
 	return PourcetageErreur,len(fichiers)
+
+
+# Amélioration
+
+def sauvegarderClassifieur(classifieur, fichier="classifieur.pkl"):
+	with open(fichier, "wb") as f:
+		pickle.dump(classifieur, f)
+	print(f"Classifieur sauvegardé dans {fichier}")
+
+
+def chargerClassifieur(fichier="classifieur.pkl"):
+	with open(fichier, "rb") as f:
+		classifieur = pickle.load(f)
+	print(f"Classifieur chargé depuis {fichier}")
+	return classifieur
+
+def testClassifieur(dossier, isSpam, classifieur):
+	return test(dossier, isSpam, classifieur['Pspam'], classifieur['Pham'], classifieur['bspam'], classifieur['bham'], classifieur['dictionnaire'])
+
+
+#def miseAJourEnLigne(classifieur, x, estSpam):
+	"""
+    Met à jour le classifieur avec un seul nouvel exemple (apprentissage en ligne).
+    Formule avec lissage :
+        b_j(m+1) = (n_j + x_j + epsilon) / (m + 1 + 2*epsilon)
+    """
+
+	eps = classifieur['epsilon']
+
+	if estSpam:
+		m = classifieur['mSpam']
+		b_old = classifieur['bspam']
 
 
 ############ programme principal ############
@@ -161,12 +204,26 @@ bham = apprendBinomial(dossier_hams, fichiershams, dictionnaire)
 Pspam = mSpam /(mSpam + mHam)
 Pham = mHam /(mSpam + mHam)
 
+# Création d'un classifieur (amélioration)
+classifieur = {}
+classifieur["Pspam"] = Pspam
+classifieur["Pham"] = Pham
+classifieur["bspam"] = bspam
+classifieur["bham"] = bham
+classifieur["dictionnaire"] = dictionnaire
+classifieur["epsilon"] = 1
+classifieur["mSpam"] = mSpam
+classifieur["mHam"] = mHam
+
+sauvegarderClassifieur(classifieur)
 
 # Calcul des erreurs avec la fonction test():
 dossier_spams_test = "spam/basetest/spam"	# à vérifier
 dossier_hams_test = "spam/basetest/ham"
-ErreurSpam, nbMailsSpam = test(dossier_spams_test, True, Pspam, Pham, bspam, bham)
-ErreurHam, nbMailsHam = test(dossier_hams_test, False, Pspam, Pham, bspam, bham)
+#ErreurSpam, nbMailsSpam = test(dossier_spams_test, True, Pspam, Pham, bspam, bham, dictionnaire)
+#ErreurHam, nbMailsHam = test(dossier_hams_test, False, Pspam, Pham, bspam, bham, dictionnaire)
+ErreurSpam, nbMailsSpam = testClassifieur(dossier_spams_test, True, classifieur)
+ErreurHam, nbMailsHam = testClassifieur(dossier_hams_test, False, classifieur)
 erreur = (ErreurSpam + ErreurHam) / 2
 nbMails = nbMailsSpam + nbMailsHam
 
