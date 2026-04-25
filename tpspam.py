@@ -165,7 +165,7 @@ def testClassifieur(dossier, isSpam, classifieur):
 	return test(dossier, isSpam, classifieur['Pspam'], classifieur['Pham'], classifieur['bspam'], classifieur['bham'], classifieur['dictionnaire'])
 
 
-#def miseAJourEnLigne(classifieur, x, estSpam):
+def miseAJourEnLigne(classifieur, x, estSpam):
 	"""
     Met à jour le classifieur avec un seul nouvel exemple (apprentissage en ligne).
     Formule avec lissage :
@@ -177,7 +177,27 @@ def testClassifieur(dossier, isSpam, classifieur):
 	if estSpam:
 		m = classifieur['mSpam']
 		b_old = classifieur['bspam']
+		# Reconstruction de n_j depuis b_j et m
+		n = np.round(b_old * (m + 2 * eps) - eps).astype(int)
+		n_new = n + x.astype(int)
+		m_new = m + 1
+		classifieur['bspam'] = (n_new + eps) / (m_new + 2 * eps)
+		classifieur['mSpam'] = m_new
+	else:
+		m = classifieur['mHam']
+		b_old = classifieur['bham']
+		n = np.round(b_old * (m + 2 * eps) - eps).astype(int)
+		n_new = n + x.astype(int)
+		m_new = m + 1
+		classifieur['bham'] = (n_new + eps) / (m_new + 2 * eps)
+		classifieur['mHam'] = m_new
 
+		# Mise à jour des probabilités a priori
+		total = classifieur['mSpam'] + classifieur['mHam']
+		classifieur['Pspam'] = classifieur['mSpam'] / total
+		classifieur['Pham']  = classifieur['mHam']  / total
+
+	return classifieur
 
 ############ programme principal ############
 
